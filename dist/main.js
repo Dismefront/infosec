@@ -14,7 +14,7 @@ async function bootstrap() {
     app.use((0, express_rate_limit_1.default)({
         windowMs: 15 * 60 * 1000,
         max: 100,
-        message: 'Too many requests from this IP, please try again later.',
+        message: 'too many requests',
     }));
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,

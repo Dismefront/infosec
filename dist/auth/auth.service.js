@@ -70,7 +70,7 @@ let AuthService = class AuthService {
     async login(loginDto) {
         const user = await this.validateUser(loginDto.login, loginDto.password);
         if (!user) {
-            throw new Error('Invalid credentials');
+            throw new Error('bad login');
         }
         const payload = { login: user.login, sub: user.id };
         return {

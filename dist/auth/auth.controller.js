@@ -26,7 +26,7 @@ let AuthController = class AuthController {
             return await this.authService.login(loginDto);
         }
         catch {
-            throw new common_1.HttpException('Invalid credentials', common_1.HttpStatus.UNAUTHORIZED);
+            throw new common_1.HttpException('invalid login', common_1.HttpStatus.UNAUTHORIZED);
         }
     }
 };

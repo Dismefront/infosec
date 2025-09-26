@@ -61,7 +61,7 @@ let UsersService = class UsersService {
             where: { login: createUserDto.login },
         });
         if (existingUser) {
-            throw new common_1.ConflictException('User with this login already exists');
+            throw new common_1.ConflictException('user already exists');
         }
         const saltRounds = 12;
         const hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
@@ -85,14 +85,14 @@ let UsersService = class UsersService {
             select: ['id', 'login', 'email', 'isActive', 'createdAt', 'updatedAt'],
         });
         if (!user) {
-            throw new common_1.NotFoundException(`User with ID ${id} not found`);
+            throw new common_1.NotFoundException(`user ${id} not found`);
         }
         return user;
     }
     async remove(id) {
         const result = await this.userRepository.delete(id);
         if (result.affected === 0) {
-            throw new common_1.NotFoundException(`User with ID ${id} not found`);
+            throw new common_1.NotFoundException(`user ${id} not found`);
         }
     }
 };

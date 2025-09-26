@@ -52,17 +52,17 @@ let PostsService = class PostsService {
             },
         });
         if (!post) {
-            throw new common_1.NotFoundException(`Post with ID ${id} not found`);
+            throw new common_1.NotFoundException(`post ${id} not found`);
         }
         return post;
     }
     async remove(id, userId) {
         const post = await this.postRepository.findOne({ where: { id } });
         if (!post) {
-            throw new common_1.NotFoundException(`Post with ID ${id} not found`);
+            throw new common_1.NotFoundException(`post ${id} not found`);
         }
         if (post.userId !== userId) {
-            throw new common_1.NotFoundException(`Post with ID ${id} not found`);
+            throw new common_1.NotFoundException(`post ${id} not found`);
         }
         await this.postRepository.delete(id);
     }

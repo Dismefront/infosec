@@ -20,12 +20,12 @@ let ApiController = class ApiController {
     getData(req) {
         const userInfo = req.user;
         const data = {
-            message: 'This is protected data',
+            message: 'protected data',
             user: userInfo,
             data: [
-                { id: 1, name: 'Sample Data 1', value: 'Value 1' },
-                { id: 2, name: 'Sample Data 2', value: 'Value 2' },
-                { id: 3, name: 'Sample Data 3', value: 'Value 3' },
+                { id: 1, name: 'data 1', value: 'val1' },
+                { id: 2, name: 'data 2', value: 'val2' },
+                { id: 3, name: 'data 3', value: 'val3' },
             ],
             timestamp: new Date().toISOString(),
         };
