@@ -1,11 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { AppConfig } from './config/app.config';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+  const appConfig = configService.get<AppConfig>('app');
+
+  if (!appConfig) {
+    throw new Error('App configuration not found');
+  }
 
   app.use(helmet());
 
@@ -26,12 +34,11 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || [
-      'http://localhost:3000',
-    ],
+    origin: appConfig.allowedOrigins,
     credentials: true,
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(appConfig.port);
+  console.log(`Application is running on port ${appConfig.port}`);
 }
 void bootstrap();

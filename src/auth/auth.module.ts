@@ -2,18 +2,29 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { User } from '../entities/user.entity';
+import { JwtConfig } from '../config/jwt.config';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'my-secret-key',
-      signOptions: { expiresIn: '24h' },
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const jwtConfig = configService.get<JwtConfig>('jwt');
+        if (!jwtConfig) {
+          throw new Error('JWT configuration not found');
+        }
+        return {
+          secret: jwtConfig.secret,
+          signOptions: { expiresIn: jwtConfig.expiresIn },
+        };
+      },
     }),
   ],
   providers: [AuthService, JwtStrategy],

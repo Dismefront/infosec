@@ -9,9 +9,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const config_module_1 = require("./config/config.module");
+const config_1 = require("@nestjs/config");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
-const database_config_1 = require("./config/database.config");
 const user_entity_1 = require("./entities/user.entity");
 const post_entity_1 = require("./entities/post.entity");
 const auth_module_1 = require("./auth/auth.module");
@@ -24,16 +25,26 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forRoot({
-                type: 'postgres',
-                host: database_config_1.databaseConfig.host,
-                port: database_config_1.databaseConfig.port,
-                username: database_config_1.databaseConfig.username,
-                password: database_config_1.databaseConfig.password,
-                database: database_config_1.databaseConfig.database,
-                entities: [user_entity_1.User, post_entity_1.Post],
-                synchronize: true,
-                logging: false,
+            config_module_1.ConfigModule,
+            typeorm_1.TypeOrmModule.forRootAsync({
+                inject: [config_1.ConfigService],
+                useFactory: (configService) => {
+                    const dbConfig = configService.get('database');
+                    if (!dbConfig) {
+                        throw new Error('Database configuration not found');
+                    }
+                    return {
+                        type: 'postgres',
+                        host: dbConfig.host,
+                        port: dbConfig.port,
+                        username: dbConfig.username,
+                        password: dbConfig.password,
+                        database: dbConfig.database,
+                        entities: [user_entity_1.User, post_entity_1.Post],
+                        synchronize: true,
+                        logging: false,
+                    };
+                },
             }),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,

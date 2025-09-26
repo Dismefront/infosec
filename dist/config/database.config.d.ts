@@ -5,4 +5,4 @@ export interface DatabaseConfig {
     password: string;
     database: string;
 }
-export declare const databaseConfig: DatabaseConfig;
+export declare const databaseConfig: (() => DatabaseConfig) & import("@nestjs/config").ConfigFactoryKeyHost<DatabaseConfig>;
