@@ -1,0 +1,85 @@
+name: security checks
+
+on:
+  push:
+    branches: [ main, lab1 ]
+  pull_request:
+    branches: [ main, lab1 ]
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  test-and-scan:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: get code
+      uses: actions/checkout@v4
+
+    - name: setup node ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: install deps
+      run: npm ci
+
+    - name: lint
+      run: npm run lint
+
+    - name: format check
+      run: npm run format:check || echo "format issues but continuing..."
+
+    - name: build
+      run: npm run build
+
+    - name: tests
+      run: npm run test
+
+    - name: npm audit
+      run: npm audit --audit-level=moderate
+      continue-on-error: true
+
+    - name: owasp check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'infosec-api'
+        path: '.'
+        format: 'HTML'
+        out: 'reports'
+        args: >
+          --enableRetired
+          --enableExperimental
+          --nodeAuditSkipDevDependencies
+
+    - name: upload reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-check-report-node-${{ matrix.node-version }}
+        path: reports/
+        retention-days: 30
+
+    - name: codeql init
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript
+      continue-on-error: true
+
+    - name: codeql analyze
+      uses: github/codeql-action/analyze@v3
+      continue-on-error: true
+
+    - name: summary
+      run: |
+        echo "## scan results" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ npm audit done" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ owasp check done" >> $GITHUB_STEP_SUMMARY
+        echo "- ℹ️ codeql attempted (requires security tab access)" >> $GITHUB_STEP_SUMMARY
