@@ -1,22 +1,22 @@
-# infosec api
+# Лабораторная работа 1 по ИБ
 
-a simple nestjs app with auth and some security stuff
+Простое приложение на NodeJS, с использованием фреймворка NestJS, направленное на разработку защищенного приложения
 
-## what it does
+## Что выполнено
 
-- **auth things**
+- **Аутентификация**
   - jwt tokens
   - password hashing with bcrypt
   - protected routes
 
-- **security**
+- **Защита**
   - sql injection protection with typeorm
   - xss protection
   - rate limiting
   - helmet for headers
   - input validation
 
-- **endpoints**
+- **Эндпоинты**
   - `POST /auth/login` - login
   - `GET /api/data` - get some data (need auth)
   - `POST /users` - create user
@@ -33,6 +33,111 @@ a simple nestjs app with auth and some security stuff
   - owasp check
   - codeql analysis
 
+## Подробное описание мер защиты
+
+### JWT
+
+- Используется JWT (JSON Web Token)-аутентификация через @nestjs/passport и passport-jwt.
+
+- При логине пользователь отправляет логин и пароль (LoginDto) в AuthController.
+
+- AuthService проверяет данные через validateUser():
+
+- Находит пользователя в БД.
+
+- Проверяет пароль через bcrypt.compare() — сравнение хэша.
+
+- Если всё верно — создаётся JWT-токен:
+
+```javascript
+const payload = { login: user.login, sub: user.id };
+return { access_token: this.jwtService.sign(payload) };
+```
+
+- Токен возвращается клиенту и используется для дальнейших запросов (в Authorization: Bearer <token>).
+
+- Доступ к защищённым маршрутам (ApiController) осуществляется через Guard JwtAuthGuard, который проверяет токен.
+
+### Хранение паролей (bcrypt)
+
+- При регистрации (или при создании пользователей) пароль хэшируется с солью:
+
+```javascript
+async hashPassword(password: string): Promise<string> {
+  const saltRounds = 12;
+  return bcrypt.hash(password, saltRounds);
+}
+```
+
+- При входе используется bcrypt.compare() для проверки хэша.
+
+### Защита от SQL Injection
+
+- Используется TypeORM — ORM, которая под капотом использует параметризованные запросы, а не конкатенацию строк SQL.
+
+- Например:
+
+```javascript
+const user = await this.userRepository.findOne({ where: { login } });
+```
+
+— здесь login передаётся как параметр, а не встраивается напрямую в SQL-строку.
+
+### Защита от XSS (Cross-Site Scripting)
+
+- В ApiController используется утилита:
+
+```javascript
+return sanitizeObject(data);
+```
+
+- Функция sanitizeObject() (судя по названию) предназначена для очистки объектов от потенциально опасных строк, например <script>...</script>.
+
+- Обычно она делает следующее:
+  - Экранирует специальные HTML-символы (<, >, ", ', &).
+  - Удаляет или фильтрует подозрительные поля.
+  - Рекурсивно обходит объект и чистит все строки.
+
+### Guards и контролируемый доступ
+
+- Для маршрута GET /api/data стоит декоратор:
+
+```javascript
+@UseGuards(JwtAuthGuard)
+```
+
+- JwtAuthGuard проверяет наличие и валидность JWT-токена через стратегию JwtStrategy
+
+### Исключения
+
+- Ошибки логина обрабатываются вручную:
+
+```javascript
+throw new HttpException('invalid login', HttpStatus.UNAUTHORIZED);
+```
+
+- Неверные токены, просроченные токены, и другие ошибки в Guard автоматически приводят к 401 Unauthorized.
+
+### Хранение секретов
+
+- JWT-секрет и expiresIn берутся из ConfigService:
+
+```javascript
+const jwtConfig = configService.get < JwtConfig > 'jwt';
+```
+
+- Конфигурация хранится отдельно (в config/jwt.config), обычно через .env файл.
+
+### Валидация входных данных
+
+- В AuthController:
+
+```javascript
+@Body(ValidationPipe) loginDto: LoginDto
+```
+
+- Используется встроенный ValidationPipe, который проверяет DTO на корректность (например, обязательность полей, длину и формат).
+
 ## setup
 
 - node.js 18+ or 20+
@@ -41,23 +146,27 @@ a simple nestjs app with auth and some security stuff
 
 ## how to run
 
-1. clone it:
+1. clone:
+
 ```bash
 git clone https://github.com/Dismefront/infosec.git
 cd infosec
 ```
 
-2. install stuff:
+2. install:
+
 ```bash
 npm install
 ```
 
-3. copy env file:
+3. copy env:
+
 ```bash
 cp .env.example .env
 ```
 
 4. setup db in `.env`:
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -67,7 +176,8 @@ DB_NAME=infosec_db
 JWT_SECRET=some-secret-key
 ```
 
-5. run it:
+5. run:
+
 ```bash
 # dev mode
 npm run start:dev
@@ -77,9 +187,10 @@ npm run build
 npm run start:prod
 ```
 
-## testing
+## Тестирование API
 
-### create user
+### Создать пользователя
+
 ```bash
 curl -X POST http://localhost:3000/users \
   -H "Content-Type: application/json" \
@@ -90,7 +201,8 @@ curl -X POST http://localhost:3000/users \
   }'
 ```
 
-### login
+### Логин
+
 ```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
@@ -100,33 +212,38 @@ curl -X POST http://localhost:3000/auth/login \
   }'
 ```
 
-### get protected data
+### Получить защищенноые данные
+
 ```bash
 curl -X GET http://localhost:3000/api/data \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-## security stuff
+## Защита
 
-### sql injection
-- using typeorm
-- no string concatenation
-- proper validation
+### SQL-инъекция
 
-### xss protection
-- input sanitization
+- typeorm
+- без конкатенации строк
+- валидация параметров
+
+### Защита от xss
+
+- обработка входных параметров
 - helmet headers
-- csp headers
+- content security policy headers
 
 ### auth security
-- bcrypt hashing (12 rounds)
-- jwt with expiration
-- token validation
 
-### rate limiting
-- 100 requests per 15 min
+- bcrypt hashing (12 кругов)
+- jwt
+- валидация токенов
 
-## dev commands
+### Лимит запросов
+
+- 100 запросов за 15 минут
+
+## Команды разработчика
 
 ```bash
 # dev mode
@@ -147,7 +264,6 @@ npm run format
 
 ## ci/cd
 
-runs these checks:
 - eslint + prettier
 - npm audit
 - codeql
@@ -155,7 +271,8 @@ runs these checks:
 
 ## database
 
-### users table
+### users
+
 - id
 - login (unique)
 - password (hashed)
@@ -164,7 +281,8 @@ runs these checks:
 - createdAt
 - updatedAt
 
-### posts table
+### posts
+
 - id
 - title
 - content
@@ -172,9 +290,12 @@ runs these checks:
 - createdAt
 - updatedAt
 
-## notes
+## Скриншоты успешной SAST/SCA проверки
 
-- use strong jwt secrets in production
-- configure postgres properly
-- use https in production
-- update dependencies regularly
+![npm audit](./imgs/npmaudit.png)
+
+![owasp check](./imgs/owasp.png)
+
+### Скриншот отчета OWASP check
+
+![owasp check](./imgs/dependency-check.png)
