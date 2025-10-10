@@ -191,6 +191,8 @@ npm run start:prod
 
 ### Создать пользователя
 
+Запрос
+
 ```bash
 curl -X POST http://localhost:3000/users \
   -H "Content-Type: application/json" \
@@ -201,7 +203,21 @@ curl -X POST http://localhost:3000/users \
   }'
 ```
 
+Ответ
+
+```bash
+{
+  "id":2,
+  "login":"testuser",
+  "email":"test@example.com",
+  "isActive":true,
+  "createdAt":"2025-10-10T06:35:40.550Z","updatedAt":"2025-10-10T06:35:40.550Z"
+}
+```
+
 ### Логин
+
+Запрос
 
 ```bash
 curl -X POST http://localhost:3000/auth/login \
@@ -212,11 +228,39 @@ curl -X POST http://localhost:3000/auth/login \
   }'
 ```
 
+Ответ
+
+```bash
+{
+  "access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6InRlc3R1c2VyIiwic3ViIjoyLCJpYXQiOjE3NjAwNzgyODAsImV4cCI6MTc2MDE2NDY4MH0.7LVQvkMQpcMDwicIeKsJE1LjB2VM13A462-HGhsWZZU"
+}
+```
+
 ### Получить защищенноые данные
+
+Запрос
 
 ```bash
 curl -X GET http://localhost:3000/api/data \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+Ответ
+
+```bash
+{
+  "id":1,
+  "title":"some-title",
+  "content":"some-content",
+  "userId":2,
+  "createdAt":"2025-10-10T06:43:34.349Z","updatedAt":"2025-10-10T06:43:34.349Z"
+}
+```
+
+Пример неправильного ответа
+
+```bash
+{"message":"Unauthorized","statusCode":401}
 ```
 
 ## Защита
